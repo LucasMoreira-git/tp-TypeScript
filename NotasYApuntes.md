@@ -174,11 +174,11 @@ const formulario = document.querySelector<HTMLFormElement>("#form-registro");
 
 formulario?.addEventListener("submit", (event: Event) => {
     // 1. Prevenimos la recarga completa del navegador
-    event.preventDefault(); 
-    
+    event.preventDefault();
+
     // 2. event.currentTarget se refiere al formulario que disparó el evento
-    const formElement = event.currentTarget as HTMLFormElement; 
-    
+    const formElement = event.currentTarget as HTMLFormElement;
+
     // 3. Extraemos todos los inputs en una sola estructura
     const data = new FormData(formElement);
 });
@@ -189,7 +189,7 @@ Cuando ejecutamos data.get("nombre"), el tipo de retorno devuelto por TypeScript
 ```TypeScript
 const usuarioInput = {
     // Le indicamos a TS: "Fuerza este valor al tipo string"
-    nombre: data.get("nombre") as string, 
+    nombre: data.get("nombre") as string,
     email: data.get("email") as string,
     // Los valores de FormData siempre son strings, los parseamos a número
     edad: parseInt(data.get("edad") as string)
@@ -218,10 +218,10 @@ function manipularElemento(elemento: HTMLElement) {
 
     if (elemento instanceof HTMLInputElement) {
         // TypeScript confirma que es un INPUT y habilita .value
-        console.log("Texto ingresado:", elemento.value); 
+        console.log("Texto ingresado:", elemento.value);
     } else if (elemento instanceof HTMLButtonElement) {
         // TypeScript confirma que es un BOTÓN y habilita .disabled
-        elemento.disabled = true; 
+        elemento.disabled = true;
     }
 }
 ```
@@ -229,7 +229,7 @@ function manipularElemento(elemento: HTMLElement) {
 ## 5. Asincronismo, Red y Mapeo de Payloads
 Este tema aborda cómo conectar tu aplicación con servicios externos sin congelar la interfaz de usuario y sin perder la rigidez del sistema de tipos al recibir datos desconocidos.
 
-### Flujo de asincronia 
+### Flujo de asincronia
 Las peticiones por red demoran un tiempo. Si el código fuera síncrono, bloquearía el hilo de ejecución principal (Event Loop) y la pantalla no respondería a clics ni scroll.
 Cuando ejecutas una función **async**, no se detiene todo el programa para esperar el resultado de una operación (como una consulta a una base de datos o un fetch). En su lugar, devuelve inmediatamente un objeto tipo Promise que representa un valor que podría no estar listo ahora, pero lo estará en el futuro
 Las funciones asíncronas devuelven siempre un envoltorio **Promise<T>**. La palabra clave await pausa la ejecución interna de esa función particular hasta que la promesa se resuelve o rechaza, permitiendo que el motor siga procesando otros eventos de la interfaz.
