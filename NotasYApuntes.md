@@ -257,3 +257,105 @@ El flujo real es este:
 1. Tu código hace una petición a la API.
 2. La API responde con un JSON crudo.
 3. Con : RespuestaServidor obligas a TypeScript a reconocer ese JSON bajo la estructura de tus DTOs.
+
+## 6. Estructura del proyecto (Personal)
+
+La estructura del proyecto está organizada para separar las vistas, los tipos
+de datos y la lógica reutilizable. Esta separación permite encontrar cada
+responsabilidad con facilidad y evita mezclar la interfaz con la lógica de
+autenticación.
+
+### La raíz del proyecto
+
+La raíz contiene los archivos generales que hacen funcionar y documentan la
+aplicación.
+
+- **`index.html` :** es el HTML inicial que carga el
+  navegador. Vite utiliza este archivo como punto de entrada y desde allí
+  incorpora el código TypeScript de la aplicación.
+- **`package.json` (configuración del proyecto):** Tiene el nombre del
+  proyecto, sus dependencias y los comandos disponibles, como `npm run dev` y
+  `npm run build`.
+- **`tsconfig.json` (configuración de TypeScript):** define cómo debe analizar
+  y compilar TypeScript, además de indicar opciones como el modo estricto.
+- **`vite.config.ts` (configuración de Vite):** contiene la configuración del
+  servidor de desarrollo y del proceso de compilación.
+- **`README.md` (documentación principal):** explica el objetivo, la
+  instalación, la estructura y el funcionamiento general del proyecto.
+- **`NotasYApuntes.md` (material de estudio):** reúne conceptos de TypeScript,
+  ejemplos y explicaciones relacionadas con la implementación del trabajo.
+
+### La carpeta `src/` (código fuente)
+
+La carpeta `src/` contiene el código que forma parte de la aplicación.
+
+- **`main.ts` :** es el archivo
+  principal que se ejecuta al cargar la aplicación. Aca se puede centralizar
+  la verificación de la ruta actual, la existencia de una sesión y los
+  permisos del usuario antes de mostrar una vista.
+- **`style.css` (estilos globales):** contiene los estilos compartidos por
+  las distintas pantallas de la aplicación.
+- **`vite-env.d.ts` (declaraciones de Vite):** agrega declaraciones de tipos
+  necesarias para que TypeScript reconozca funcionalidades propias de Vite.
+  Normalmente no es necesario modificarlo para este trabajo.
+
+### La carpeta `types/` (modelos y contratos)
+
+Esta carpeta define la forma que deben tener los datos. Los tipos funcionan
+como contratos: indican qué propiedades existen, qué tipo tiene cada una y
+qué valores son válidos.
+
+- **`IUser.ts` (modelo de usuario):** contiene la interfaz del usuario y los
+  DTOs relacionados con el registro y el login. Permite que todos los
+  archivos utilicen la misma estructura.
+- **`Rol.ts` (roles permitidos):** define los roles que puede tener un usuario,
+  por ejemplo `admin` o `client`. Así se evita escribir roles arbitrarios o
+  con errores de tipeo.
+
+### La carpeta `utils/` (caja de herramientas)
+
+Contiene funciones auxiliares reutilizables. La idea es que la lógica común
+se escriba una sola vez y pueda ser utilizada desde distintas pantallas.
+
+- **`localStorage.ts` (persistencia local):** centraliza la lectura y escritura
+  de usuarios y sesiones en `localStorage`. Las claves principales son
+  `users`, que contiene el array de usuarios, y `userData`, que contiene la
+  sesión activa.
+- **`auth.ts` (autenticación y autorización):** reúne funciones para saber si
+  existe una sesión, obtener el usuario actual, cerrar sesión y comprobar si
+  el rol tiene permiso para acceder a una zona.
+- **`navigate.ts` (navegación):** centraliza las redirecciones entre login,
+  registro, zona del cliente y zona del administrador.
+
+### La carpeta `pages/` (vistas de la aplicación)
+
+Contiene las pantallas HTML y la lógica TypeScript específica de cada una.
+En los archivos `.ts` de estas carpetas se capturan eventos como `submit` y
+`click`, se validan datos y se actualiza la interfaz.
+
+- **`pages/auth/` (autenticación):** contiene las pantallas relacionadas con
+  el acceso de los usuarios.
+  - **`login/`:** incluye el formulario de inicio de sesión y la lógica que
+    compara email y contraseña contra los usuarios guardados.
+  - **`registro/`:** incluye el formulario de alta y la lógica que valida y
+    agrega usuarios al array `users`.
+- **`pages/client/` (zona del cliente):** contiene la pantalla que puede
+  utilizar un usuario con rol `client` una vez que inició sesión.
+- **`pages/admin/` (zona administrativa):** contiene la pantalla reservada
+  para usuarios con rol `admin`. Su acceso debe estar protegido por el guard.
+
+### Relación entre las partes
+
+El flujo general de la aplicación es el siguiente:
+
+1. El usuario abre `index.html`.
+2. La aplicación inicia desde `main.ts`.
+3. El guard verifica la ruta y la sesión almacenada.
+4. Las páginas de login o registro capturan los datos del usuario.
+5. Los modelos de `types/` indican cómo deben ser esos datos.
+6. Las funciones de `utils/` guardan, leen y validan la información.
+7. La navegación dirige al usuario a la zona permitida según su rol.
+
+Esta organización prepara el proyecto para reemplazar `localStorage` por una
+API o una base de datos real en el futuro sin tener que modificar la lógica de
+cada pantalla.
