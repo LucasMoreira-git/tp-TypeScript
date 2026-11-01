@@ -55,7 +55,7 @@ const mayores = edades.filter(edad => edad >= 18); // [22, 18, 30]
 const usuarios = [{id: 1, name: 'Ana'}, {id: 2, name: 'Luis'}];
 const usuario = usuarios.find(u => u.id === 2); // {id: 2, name: 'Luis'}
 ```
-` **Ejemplo de codigo para analizar** `
+**Ejemplo de codigo para analizar**
 ```TypeScript
 let datoIngresante: unknown = "1500";
 let historialPrecios: number[] = [1000, 1200];
@@ -125,12 +125,12 @@ if (inputEmail) {
 
 
 // Opción B: Encadenamiento opcional para ejecución segura
-btnEnviar?.addEventListener("click", () => { ... });[cite: 17]
+btnEnviar?.addEventListener("click", () => { ... });
 ```
 ### Colecciones de Nodos y Tipado de Eventos
 Al usar **querySelectorAll**, TypeScript nos devuelve una estructura llamada NodeListOf<T>
-- Se parece a un arreglo, pero `**NO es un Array**`. No posee métodos de transformación algorítmica como .map(), .filter() o .reduce()
-- Si necesitamos transformar esa lista, debemos convertir la estructura a un arreglo real mediante `**Array.from()**`.
+- Se parece a un arreglo, pero **NO es un Array**. No posee métodos de transformación algorítmica como .map(), .filter() o .reduce()
+- Si necesitamos transformar esa lista, debemos convertir la estructura a un arreglo real mediante **Array.from()**.
 
 Por ultimo Tipado de **los eventos** son los disparadores que introducen datos desde la interacción humana hacia la lógica. Para evitar errores al leer coordenadas o teclas presionadas, debemos tipar explícitamente el parámetro del evento
 
@@ -144,8 +144,8 @@ inputBusqueda?.addEventListener("keydown", (event: KeyboardEvent) => {
     }
 });
 ```
-- `**MouseEvent**`: Para eventos de ratón (click, mousemove). Da acceso a clientX, clientY, etc.   
-- `**KeyboardEvent**`: Para eventos de teclado (keydown, keyup). Da acceso a key, code, etc.   
+- **MouseEvent**: Para eventos de ratón (click, mousemove), da acceso a `clientX`, `clientY`, etc.
+- **KeyboardEvent**: Para eventos de teclado (keydown, keyup), da acceso a `key`, `code`, etc.
 
 ### Ejemplo de analisis de codigo 
 ```TypeScript
@@ -166,6 +166,94 @@ botonComprar.addEventListener("click", (e) => {
 ```
 ## 4. Flujos de Interfaz y Validaciones
 Este apartado es para aprender cómo extraer paquetes masivos de datos con la **API FormData**, cuándo usar aserciones de tipo **(as)**, y cómo construir **Type Guards** (typeof e instanceof) para verificar la integridad de la información en tiempo de ejecución.
-### Extracción Eficiente de Datos
-**FormData** es un objeto que pertenece a la Web API. Si tenes un formulario web con 10 campos, ir uno por uno leyendo (.value) en JavaScript es tedioso. Este objeto extrae automáticamente los valores de todos los elementos <input>, <select> o <textarea> dentro de un formulario que posean el atributo name en el HTML.   
 
+### Extracción Eficiente de Datos
+**FormData** es un objeto que pertenece a la Web API. Si tenes un formulario web con 10 campos, ir uno por uno leyendo (.value) en JavaScript es tedioso. Este objeto extrae automáticamente los valores de todos los elementos `<input>`, `<select>` o `<textarea>` dentro de un formulario que posean el atributo name en el HTML.
+```TypeScript
+const formulario = document.querySelector<HTMLFormElement>("#form-registro");
+
+formulario?.addEventListener("submit", (event: Event) => {
+    // 1. Prevenimos la recarga completa del navegador
+    event.preventDefault(); 
+    
+    // 2. event.currentTarget se refiere al formulario que disparó el evento
+    const formElement = event.currentTarget as HTMLFormElement; 
+    
+    // 3. Extraemos todos los inputs en una sola estructura
+    const data = new FormData(formElement);
+});
+```
+
+### Type Assertions (as): "Confía en mí, compilador"
+Cuando ejecutamos data.get("nombre"), el tipo de retorno devuelto por TypeScript es **FormDataEntryValue | null** (el cual representa un string, un objeto File, o null si la clave no existe)
+```TypeScript
+const usuarioInput = {
+    // Le indicamos a TS: "Fuerza este valor al tipo string"
+    nombre: data.get("nombre") as string, 
+    email: data.get("email") as string,
+    // Los valores de FormData siempre son strings, los parseamos a número
+    edad: parseInt(data.get("edad") as string)
+};
+```
+- **ADVERTENCIA:** El uso de as ignora las comprobaciones de TypeScript. Si usas **as string** en un campo que retornó null, TypeScript no lanzará error de compilación pero tu aplicación podría fallar al procesar ese dato en tiempo de ejecución
+
+### Type Guards: Verificación en Runtime (typeof e instanceof)
+Para evitar confiar a ciegas en las aserciones con as, construimos Type Guards (Guardias de Tipo). Son filtros lógicos que analizan la estructura del dato en tiempo de ejecución antes de procesarlo.
+
+1. **typeOf:** Evalua si una variable es "string", "number", "boolean", "undefined", etc.
+```TypeScript
+function procesarMonto(valor: string | number): number {
+    if (typeof valor === "string") {
+        // Dentro de este bloque, TS deduce que 'valor' es un STRING
+        return parseFloat(valor);
+    }
+    // Por descarte, TS deduce que aquí 'valor' es un NUMBER
+    return valor;
+}
+```
+2. **instanceOf:** : Evalúa si un objeto fue instanciado a partir de una Clase específica.
+```TypeScript
+function manipularElemento(elemento: HTMLElement) {
+    // HTMLElement no tiene la propiedad .value
+
+    if (elemento instanceof HTMLInputElement) {
+        // TypeScript confirma que es un INPUT y habilita .value
+        console.log("Texto ingresado:", elemento.value); 
+    } else if (elemento instanceof HTMLButtonElement) {
+        // TypeScript confirma que es un BOTÓN y habilita .disabled
+        elemento.disabled = true; 
+    }
+}
+```
+
+## 5. Asincronismo, Red y Mapeo de Payloads
+Este tema aborda cómo conectar tu aplicación con servicios externos sin congelar la interfaz de usuario y sin perder la rigidez del sistema de tipos al recibir datos desconocidos.
+
+### Flujo de asincronia 
+Las peticiones por red demoran un tiempo. Si el código fuera síncrono, bloquearía el hilo de ejecución principal (Event Loop) y la pantalla no respondería a clics ni scroll.
+Cuando ejecutas una función **async**, no se detiene todo el programa para esperar el resultado de una operación (como una consulta a una base de datos o un fetch). En su lugar, devuelve inmediatamente un objeto tipo Promise que representa un valor que podría no estar listo ahora, pero lo estará en el futuro
+Las funciones asíncronas devuelven siempre un envoltorio **Promise<T>**. La palabra clave await pausa la ejecución interna de esa función particular hasta que la promesa se resuelve o rechaza, permitiendo que el motor siga procesando otros eventos de la interfaz.
+
+### Mapeo de Payloads (PAYLOAD =! DTOS)
+El payload es el "cargamento" de datos que viaja en una **petición HTTP**. El mapeo de payloads es el proceso de transformar ese JSON crudo que recibes (payload) en un objeto que tu aplicación TypeScript entienda perfectamente y sea cómodo de usar.
+Cuando realizas **const data = await response.json()**, TypeScript no puede adivinar en tiempo de compilación qué datos devolverá la API externa, por lo que trata el resultado como any
+
+```TypeScript
+interface UsuarioDTO {
+    id: number;
+    nombre: string;
+    email: string;
+}
+
+interface RespuestaServidor {
+    total: number;
+    data: UsuarioDTO[];
+}
+
+// Mapeo explícito que elimina el tipo 'any'
+const respuesta: RespuestaServidor = await response.json();
+```
+El flujo real es este:
+1. Tu código hace una petición a la API.
+2. La API responde con un JSON crudo.
+3. Con : RespuestaServidor obligas a TypeScript a reconocer ese JSON bajo la estructura de tus DTOs.
