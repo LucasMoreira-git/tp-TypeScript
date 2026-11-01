@@ -87,6 +87,85 @@ Para evitar que los algoritmos muten datos sensibles o requieran información in
 - `readonly (Inmutabilidad)`: Protege propiedades que no deben cambiar jamás una vez instanciadas (ej: IDs de base de datos, códigos de barra, timestamps). 
 - `Opcionales (?)`: Indican que una propiedad puede ser de su tipo asignado o undefined.
 - `Operador de Fusión Nula(??)`:Se utiliza para asignar un valor por defecto solo cuando una variable es verdaderamente "nula", es decir, null o undefined, **evalúa como "falso" ÚNICAMENTE a null y undefined**.
-
+- `Operador de encadenamiento opcional(.?)`: Cuando la ejecución llega a un símbolo **(?.)** el motor de JavaScript evalúa la variable que está a la izquierda del operador:
+   1. Si la variable es null o undefined: La ejecución de esa línea se detiene inmediatamente, ignora el resto de la cadena a la derecha y devuelve undefined en lugar de lanzar un error crítico en runtim
+   2. Si la variable tiene un valor válido ejecuta la funcion normalmente
 
 ## 3. DOM como Estructura de Datos 
+En TypeScript, existe una jerarquía de interfaces donde cada etiqueta posee atributos únicos:
+- HTMLElement: Interfaz base para cualquier elemento HTML.
+- HTMLInputElement: Posee la propiedad .value, .placeholder, etc.
+- HTMLButtonElement: Posee la propiedad .disabled, .type, etc.
+- HTMLAnchorElement: Posee la propiedad .href, .target, etc.
+
+```TypeScript
+// Especificamos el tipo exacto mediante genéricos <T>
+const inputEmail = document.querySelector<HTMLInputElement>("#email");
+const btnEnviar = document.querySelector<HTMLButtonElement>("#btn-submit");
+```
+Existen varios **métodos fundamentales** en el DOM que se usan constantemente al desarrollar con JavaScript y TypeScript:
+1. `document.querySelector(selector)`: Devuelve el primer elemento que coincida con el selector CSS (ej. ".clase", "#id", "button").
+2. `document.querySelectorAll(selector)`: Devuelve todos los elementos que coincidan con el selector en una lista estática (NodeList).
+3. `document.getElementById(id)`: Busca un elemento directamente por su atributo id.
+4. `document.createElement(etiqueta)`: Crea un elemento HTML nuevo en la memoria del navegador, listo para ser insertado.
+5. `elemento.remove()`: Elimina por completo el elemento del HTML.
+6. `elemento.replaceWith(nuevoElemento)`: Reemplaza el elemento actual por otro nuevo en la estructura del código.
+
+
+### Manejo Estricto de Nulos
+Dado que el elemento podría no existir en el HTML, el tipo que devuelve querySelector es (HTMLInputElement | null). Intentar acceder directamente a inputEmail.value causará un error en compilación: "Object is possibly 'null'".
+
+Para solucionar esto de forma segura aplicamos **Type Narrowing** (Refinamiento) o **encadenamiento opcional** (?.):
+```TypeScript
+// Opción A: Bloque condicional (Type Narrowing)
+if (inputEmail) {
+    // Dentro de este bloque, TS deduce que inputEmail NO es null
+    console.log(inputEmail.value);
+}
+
+
+// Opción B: Encadenamiento opcional para ejecución segura
+btnEnviar?.addEventListener("click", () => { ... });[cite: 17]
+```
+### Colecciones de Nodos y Tipado de Eventos
+Al usar **querySelectorAll**, TypeScript nos devuelve una estructura llamada NodeListOf<T>
+- Se parece a un arreglo, pero `**NO es un Array**`. No posee métodos de transformación algorítmica como .map(), .filter() o .reduce()
+- Si necesitamos transformar esa lista, debemos convertir la estructura a un arreglo real mediante `**Array.from()**`.
+
+Por ultimo Tipado de **los eventos** son los disparadores que introducen datos desde la interacción humana hacia la lógica. Para evitar errores al leer coordenadas o teclas presionadas, debemos tipar explícitamente el parámetro del evento
+
+
+```TypeScript
+const inputBusqueda = document.querySelector<HTMLInputElement>("#buscar");
+
+inputBusqueda?.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Enter") {
+        console.log("Buscando término:", inputBusqueda.value);
+    }
+});
+```
+- `**MouseEvent**`: Para eventos de ratón (click, mousemove). Da acceso a clientX, clientY, etc.   
+- `**KeyboardEvent**`: Para eventos de teclado (keydown, keyup). Da acceso a key, code, etc.   
+
+### Ejemplo de analisis de codigo 
+```TypeScript
+const inputsCantidad = document.querySelectorAll(".cantidad-input");
+
+// Intento de calcular las cantidades totales sumando todos los campos
+const listaCantidades = inputsCantidad.map(input => input.value);
+
+const botonComprar = document.querySelector("#btn-comprar");
+
+botonComprar.addEventListener("click", (e) => {
+    console.log("Click realizado en pantalla X:", e.clientX);
+    
+    let primerInput = inputsCantidad[0];
+    let total = primerInput.value * 100;
+    console.log("Total a pagar:", total);
+});
+```
+## 4. Flujos de Interfaz y Validaciones
+Este apartado es para aprender cómo extraer paquetes masivos de datos con la **API FormData**, cuándo usar aserciones de tipo **(as)**, y cómo construir **Type Guards** (typeof e instanceof) para verificar la integridad de la información en tiempo de ejecución.
+### Extracción Eficiente de Datos
+**FormData** es un objeto que pertenece a la Web API. Si tenes un formulario web con 10 campos, ir uno por uno leyendo (.value) en JavaScript es tedioso. Este objeto extrae automáticamente los valores de todos los elementos <input>, <select> o <textarea> dentro de un formulario que posean el atributo name en el HTML.   
+
